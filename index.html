@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>普通話水平測試 - 難點字詞練習詞卡</title>
+    <style>
+        /* CSS 變量與全局設定 */
+        :root {
+            --color-light: #91C6BC;
+            --color-main: #4B9DA9;
+            --color-bg: #FFFFFF;
+            --color-accent: #E37434;
+            --font-yuanti: "Yuanti SC", "YouYuan", "STYuanti", "Microsoft YaHei", sans-serif;
+            --font-pinyin: "Calibri", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-yuanti);
+            background-color: var(--color-bg);
+            color: #333;
+            min-height: 100vh;
+            min-height: 100svh; 
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            
+            -webkit-user-select: none;
+            user-select: none; 
+        }
+
+        input, textarea {
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+
+        /* 頂部標題與計數器 */
+        header {
+            padding: env(safe-area-inset-top, 15px) 20px 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .title-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .title-line1 {
+            color: #666666;
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            font-weight: normal;
+        }
+
+        .title-line2 {
+            color: #000000;
+            font-size: clamp(1.1rem, 4vw, 1.5rem);
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+
+        .title-hint {
+            color: #888888;
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+            font-weight: normal;
+            margin-top: 2px;
+        }
+
+        .counter {
+            color: var(--color-main);
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-weight: bold;
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        /* 視圖切換管理 */
+        .view {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 20px 20px 20px;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* 登入視圖 */
+        #login-view {
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        #login-view h2 {
+            color: #000000;
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .project-info {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .project-info h3 {
+            color: var(--color-main);
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .input-group {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid var(--color-light);
+            border-radius: 10px;
+            font-family: var(--font-yuanti);
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--color-main);
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: var(--font-yuanti);
+            background-color: var(--color-main);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .error-msg {
+            color: var(--color-accent);
+            font-size: 1rem;
+            min-height: 1.5em;
+        }
+
+        /* 詞卡視圖 */
+        #card-view {
+            justify-content: flex-start;
+        }
+
+        .card-container {
+            perspective: 1000px;
+            width: 85vw;
+            max-width: 500px;
+            aspect-ratio: 4/3;
+            margin: 5vh auto 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            border-radius: 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border-radius: 20px;
+            border: 4px solid var(--color-light);
+            padding: 20px;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            border-color: var(--color-main);
+        }
+
+        .hanzi {
+            font-size: clamp(40px, 11vw, 75px);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .pinyin {
+            font-family: var(--font-pinyin);
+            font-size: clamp(22px, 6vw, 36px);
+            color: var(--color-accent);
+            margin-bottom: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            width: 85vw;
+            max-width: 500px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .controls button {
+            flex: 1;
+            padding: 12px 0;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+        }
+
+        /* 結算視圖 */
+        #finish-view {
+            overflow-y: auto;
+            justify-content: flex-start;
+            padding-bottom: 80px;
+        }
+
+        #finish-view h2 {
+            color: #4B9DA9;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .finish-controls {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .finish-controls button {
+            flex: 1;
+            padding: 12px 0;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+        }
+
+        #restart-btn {
+            background-color: #91C6BC;
+        }
+
+        #restart-btn:hover {
+            background-color: var(--color-main);
+        }
+
+        #home-btn {
+            background-color: var(--color-accent);
+        }
+
+        #home-btn:hover {
+            opacity: 0.9;
+        }
+
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .word-item {
+            background-color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 2px solid var(--color-light);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+        }
+
+        /* 結算頁面：點擊播放時的變色效果 */
+        .word-item.playing {
+            background-color: var(--color-light);
+            border-color: var(--color-main);
+        }
+        
+        .word-item.playing .hanzi, 
+        .word-item.playing .pinyin {
+            color: white;
+        }
+
+        .word-item .pinyin {
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .word-item .hanzi {
+            font-size: 1.2rem;
+        }
+
+        /* 底部版權宣告 */
+        footer {
+            width: 100%;
+            padding: 15px;
+            padding-bottom: env(safe-area-inset-bottom, 15px);
+            font-size: 0.7rem;
+            color: #999;
+            text-align: center;
+            background-color: var(--color-bg);
+            margin-top: auto;
+        }
+
+        /* 開發者模式 */
+        #dev-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            opacity: 0.3;
+            cursor: pointer;
+            display: none;
+            z-index: 100;
+        }
+
+        #dev-panel {
+            display: none;
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            z-index: 99;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        #dev-panel textarea {
+            width: 300px;
+            height: 200px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="main-header" style="display: none;">
+        <div class="title-container">
+            <h2 class="title-line1">普通話水平測試</h2>
+            <h1 class="title-line2">【作品50號】難點字詞練習詞卡</h1>
+            <p class="title-hint">點擊詞卡播放示範錄音</p>
+        </div>
+        <div class="counter" id="counter">1/34</div>
+    </header>
+
+    <div id="login-view" class="view active">
+        <h2>開始練習</h2>
+        <div class="project-info">
+            <p style="color: #666; font-size: 1rem;">普通話水平測試</p>
+            <h3>【作品50號】難點字詞練習詞卡</h3>
+        </div>
+        <div class="input-group">
+            <input type="text" id="username" placeholder="請輸入姓名">
+            <input type="password" id="password" placeholder="請輸入密碼">
+        </div>
+        <div class="error-msg" id="login-error"></div>
+        <button id="login-btn">進入</button>
+    </div>
+
+    <div id="card-view" class="view">
+        <div id="dev-toggle">🛠️</div>
+        
+        <div id="dev-panel">
+            <p><strong>時間軸標記工具</strong></p>
+            <button id="dev-start-btn" style="padding: 5px 10px; font-size: 0.9rem; margin: 10px 0;">開始錄製模式</button>
+            <button id="dev-mark-btn" style="padding: 5px 10px; font-size: 0.9rem; background: var(--color-accent); margin: 10px 0;" disabled>標記下一句 (或按空白鍵)</button>
+            <p id="dev-status">等待開始...</p>
+            <textarea id="dev-output" readonly></textarea>
+        </div>
+
+        <div class="card-container">
+            <div class="card" id="flashcard">
+                <div class="card-face card-front">
+                    <div class="hanzi" id="front-hanzi"></div>
+                </div>
+                <div class="card-face card-back">
+                    <div class="pinyin" id="back-pinyin"></div>
+                    <div class="hanzi" id="back-hanzi"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="prev-btn">上一個</button>
+            <button id="next-btn">下一個</button>
+        </div>
+    </div>
+
+    <div id="finish-view" class="view">
+        <h2>恭喜完成練習，讀得真不錯！</h2>
+        <div class="finish-controls">
+            <button id="restart-btn">再來一遍</button>
+            <button id="home-btn">回主目錄</button>
+        </div>
+        <div class="word-list" id="word-list"></div>
+    </div>
+
+    <footer>
+        本網頁拼音均由AI生成，標準注音請參考《普通話水平測試實施綱要（2021年版）》。<br>
+        錄音僅供參考。網頁僅供機構内部使用。普通話培訓測試中心版權所有。
+    </footer>
+
+    <!-- 更新了對應的音檔路徑 -->
+    <audio id="audio-player" src="pscwords50.mp3" preload="auto"></audio>
+
+    <script>
+        // === 數據定義 (替換為作品50號的字詞，時間軸為臨時預設值，請使用 🛠️ 工具重新標記) ===
+        let sentenceData = [
+    {
+        "word": "問及",
+        "pinyin": "wèn jí",
+        "start": 0,
+        "end": 2.868795
+    },
+    {
+        "word": "世紀",
+        "pinyin": "shì jì",
+        "start": 2.868795,
+        "end": 5.500827
+    },
+    {
+        "word": "汽車",
+        "pinyin": "qì chē",
+        "start": 5.500827,
+        "end": 8.603217
+    },
+    {
+        "word": "新加坡",
+        "pinyin": "xīn jiā pō",
+        "start": 8.603217,
+        "end": 11.460782
+    },
+    {
+        "word": "知名人士",
+        "pinyin": "zhī míng rén shì",
+        "start": 11.460782,
+        "end": 14.953549
+    },
+    {
+        "word": "冷氣機",
+        "pinyin": "lěng qì jī",
+        "start": 14.953549,
+        "end": 18.363082
+    },
+    {
+        "word": "解釋",
+        "pinyin": "jiě shì",
+        "start": 18.363082,
+        "end": 21.890631
+    },
+    {
+        "word": "熱帶",
+        "pinyin": "rè dài",
+        "start": 21.890631,
+        "end": 25.15591
+    },
+    {
+        "word": "東南亞",
+        "pinyin": "dōng nán yà",
+        "start": 25.15591,
+        "end": 28.118644
+    },
+    {
+        "word": "生產力",
+        "pinyin": "shēng chǎn lì",
+        "start": 28.118644,
+        "end": 31.261883
+    },
+    {
+        "word": "生活水準",
+        "pinyin": "shēng huó shuǐ zhǔn",
+        "start": 31.261883,
+        "end": 35.128531
+    },
+    {
+        "word": "實事求是",
+        "pinyin": "shí shì qiú shì",
+        "start": 35.128531,
+        "end": 40.33177
+    },
+    {
+        "word": "上述",
+        "pinyin": "shàng shù",
+        "start": 40.33177,
+        "end": 43.767782
+    },
+    {
+        "word": "報道",
+        "pinyin": "bào dào",
+        "start": 43.767782,
+        "end": 46.313877
+    },
+    {
+        "word": "突發奇想",
+        "pinyin": "tū fā qí xiǎng",
+        "start": 46.313877,
+        "end": 50.391461
+    },
+    {
+        "word": "記者",
+        "pinyin": "jì zhě",
+        "start": 50.391461,
+        "end": 53.821146
+    },
+    {
+        "word": "糟糕",
+        "pinyin": "zāo gāo",
+        "start": 53.821146,
+        "end": 57.010052
+    },
+    {
+        "word": "其實",
+        "pinyin": "qí shí",
+        "start": 57.010052,
+        "end": 60.211504
+    },
+    {
+        "word": "中旬",
+        "pinyin": "zhōng xún",
+        "start": 60.211504,
+        "end": 63.526161
+    },
+    {
+        "word": "報紙",
+        "pinyin": "bào zhǐ",
+        "start": 63.526161,
+        "end": 66.783852
+    },
+    {
+        "word": "人類",
+        "pinyin": "rén lèi",
+        "start": 66.783852,
+        "end": 70.228366
+    },
+    {
+        "word": "獲此“殊榮”",
+        "pinyin": "huò cǐ “ shū róng ”",
+        "start": 70.228366,
+        "end": 73.55007
+    },
+    {
+        "word": "塑料袋",
+        "pinyin": "sù liào dài",
+        "start": 73.55007,
+        "end": 77.63354
+    },
+    {
+        "word": "誕生",
+        "pinyin": "dàn shēng",
+        "start": 77.63354,
+        "end": 81.064102
+    },
+    {
+        "word": "家族",
+        "pinyin": "jiā zú",
+        "start": 81.064102,
+        "end": 84.257165
+    },
+    {
+        "word": "包括",
+        "pinyin": "bāo kuò",
+        "start": 84.257165,
+        "end": 87.264918
+    },
+    {
+        "word": "酸奶杯",
+        "pinyin": "suān nǎi bēi",
+        "start": 87.264918,
+        "end": 90.560397
+    },
+    {
+        "word": "雪糕杯",
+        "pinyin": "xuě gāo bēi",
+        "start": 90.560397,
+        "end": 94.039313
+    },
+    {
+        "word": "廢棄物",
+        "pinyin": "fèi qì wù",
+        "start": 94.039313,
+        "end": 97.189489
+    },
+    {
+        "word": "形成",
+        "pinyin": "xíng chéng",
+        "start": 97.189489,
+        "end": 100.504961
+    },
+    {
+        "word": "體積大",
+        "pinyin": "tǐ jī dà",
+        "start": 100.504961,
+        "end": 104.796617
+    },
+    {
+        "word": "不降解",
+        "pinyin": "bù jiàng jiě",
+        "start": 104.796617,
+        "end": 108.035295
+    },
+    {
+        "word": "社會問題",
+        "pinyin": "shè huì wèn tí",
+        "start": 108.035295,
+        "end": 112.080705
+    },
+    {
+        "word": "比如",
+        "pinyin": "bǐ rú",
+        "start": 112.080705,
+        "end": 114.824532
+    },
+    {
+        "word": "散落",
+        "pinyin": "sǎn luò",
+        "start": 114.824532,
+        "end": 118.521788
+    },
+    {
+        "word": "牲畜",
+        "pinyin": "shēng chù",
+        "start": 118.521788,
+        "end": 121.927316
+    },
+    {
+        "word": "吞食",
+        "pinyin": "tūn shí",
+        "start": 121.927316,
+        "end": 124.862723
+    },
+    {
+        "word": "導致",
+        "pinyin": "dǎo zhì",
+        "start": 124.862723,
+        "end": 127.501634
+    },
+    {
+        "word": "莊稼",
+        "pinyin": "zhuāng jia",
+        "start": 127.501634,
+        "end": 130.436941
+    },
+    {
+        "word": "造成",
+        "pinyin": "zào chéng",
+        "start": 130.436941,
+        "end": 133.571996
+    },
+    {
+        "word": "焚燒處理",
+        "pinyin": "fén shāo chǔ lǐ",
+        "start": 133.571996,
+        "end": 139.01685
+    },
+    {
+        "word": "化學",
+        "pinyin": "huà xué",
+        "start": 139.01685,
+        "end": 141.866396
+    },
+    {
+        "word": "二噁英",
+        "pinyin": "èr ě yīng",
+        "start": 141.866396,
+        "end": 144.666835
+    },
+    {
+        "word": "化合物",
+        "pinyin": "huà hé wù",
+        "start": 144.666835,
+        "end": 148.474487
+    }
+];
+
+        // === 狀態變量 ===
+        let currentIndex = 0;
+        let isFlipped = false;
+        let audioPlayer = document.getElementById('audio-player');
+        let playTimeout;
+        let activeWordElement = null;
+
+        // === DOM 元素 ===
+        const loginView = document.getElementById('login-view');
+        const cardView = document.getElementById('card-view');
+        const finishView = document.getElementById('finish-view');
+        const mainHeader = document.getElementById('main-header');
+        
+        const loginBtn = document.getElementById('login-btn');
+        const passwordInput = document.getElementById('password');
+        const usernameInput = document.getElementById('username');
+        const loginError = document.getElementById('login-error');
+        
+        const flashcard = document.getElementById('flashcard');
+        const frontHanzi = document.getElementById('front-hanzi');
+        const backHanzi = document.getElementById('back-hanzi');
+        const backPinyin = document.getElementById('back-pinyin');
+        const counter = document.getElementById('counter');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const wordList = document.getElementById('word-list');
+
+        // === 登入邏輯 ===
+        function attemptLogin() {
+            const inputVal = passwordInput.value.trim().toLowerCase();
+            if (inputVal === 'vtcpsc') {
+                if (usernameInput.value.trim() === '') {
+                    loginError.textContent = '請輸入姓名';
+                    return;
+                }
+                loginError.textContent = '';
+                loginView.classList.remove('active');
+                cardView.classList.add('active');
+                mainHeader.style.display = 'flex';
+                updateCard();
+            } else {
+                loginError.textContent = '請輸入正確密碼';
+            }
+        }
+
+        loginBtn.addEventListener('click', attemptLogin);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin();
+        });
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') passwordInput.focus();
+        });
+
+        // === 詞卡邏輯 ===
+        function updateCard() {
+            flashcard.style.transition = 'none';
+            flashcard.classList.remove('is-flipped');
+            isFlipped = false;
+            
+            void flashcard.offsetWidth;
+            
+            flashcard.style.transition = 'transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)';
+
+            const data = sentenceData[currentIndex];
+            frontHanzi.textContent = data.word;
+            backHanzi.textContent = data.word;
+            backPinyin.textContent = data.pinyin;
+            counter.textContent = `${currentIndex + 1}/${sentenceData.length}`;
+            
+            prevBtn.disabled = currentIndex === 0;
+            prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+        }
+
+        function playAudioSnippet(start, end, onEndCallback = null) {
+            clearTimeout(playTimeout);
+            audioPlayer.currentTime = start;
+            audioPlayer.play().catch(e => console.log("等待用戶交互以播放音頻", e));
+            
+            const duration = (end - start) * 1000;
+            playTimeout = setTimeout(() => {
+                audioPlayer.pause();
+                if (onEndCallback) onEndCallback();
+            }, duration);
+        }
+
+        flashcard.addEventListener('click', () => {
+            isFlipped = true;
+            flashcard.classList.add('is-flipped');
+            const data = sentenceData[currentIndex];
+            playAudioSnippet(data.start, data.end);
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < sentenceData.length - 1) {
+                currentIndex++;
+                updateCard();
+            } else {
+                showFinishView();
+            }
+        });
+
+        // === 結算視圖邏輯 ===
+        function showFinishView() {
+            cardView.classList.remove('active');
+            finishView.classList.add('active');
+            mainHeader.style.display = 'none';
+            
+            wordList.innerHTML = '';
+            sentenceData.forEach((item) => {
+                const el = document.createElement('div');
+                el.className = 'word-item';
+                el.innerHTML = `<div class="pinyin">${item.pinyin}</div><div class="hanzi">${item.word}</div>`;
+                
+                el.addEventListener('click', () => {
+                    if (activeWordElement) {
+                        activeWordElement.classList.remove('playing');
+                    }
+                    
+                    el.classList.add('playing');
+                    activeWordElement = el;
+                    
+                    playAudioSnippet(item.start, item.end, () => {
+                        el.classList.remove('playing');
+                        activeWordElement = null;
+                    });
+                });
+                
+                wordList.appendChild(el);
+            });
+        }
+
+        restartBtn.addEventListener('click', () => {
+            currentIndex = 0;
+            finishView.classList.remove('active');
+            cardView.classList.add('active');
+            mainHeader.style.display = 'flex';
+            updateCard();
+        });
+
+        homeBtn.addEventListener('click', () => {
+            window.location.href = 'https://echo02-game.github.io/pscwordshub/';
+        });
+
+        // === 開發者模式邏輯 ===
+        const devToggle = document.getElementById('dev-toggle');
+        const devPanel = document.getElementById('dev-panel');
+        const devStartBtn = document.getElementById('dev-start-btn');
+        const devMarkBtn = document.getElementById('dev-mark-btn');
+        const devStatus = document.getElementById('dev-status');
+        const devOutput = document.getElementById('dev-output');
+        
+        let isDevMode = false;
+        let isRecording = false;
+        let devData = [];
+        let currentRecordIndex = 0;
+        let lastMarkTime = 0;
+
+        // 設備檢測邏輯：透過 userAgent 判斷是否為行動裝置
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // 僅在非行動裝置（即電腦）顯示開發者工具按鈕
+        if (!isMobileDevice) {
+            devToggle.style.display = 'block';
+        }
+
+        devToggle.addEventListener('click', () => {
+            isDevMode = !isDevMode;
+            devPanel.style.display = isDevMode ? 'block' : 'none';
+        });
+
+        devStartBtn.addEventListener('click', () => {
+            isRecording = true;
+            devData = JSON.parse(JSON.stringify(sentenceData));
+            currentRecordIndex = 0;
+            lastMarkTime = 0;
+            devOutput.value = '';
+            devMarkBtn.disabled = false;
+            
+            currentIndex = 0;
+            updateCard();
+            
+            devStatus.textContent = `錄製中: 第 ${currentRecordIndex + 1} 個詞 (${devData[currentRecordIndex].word})`;
+            
+            clearTimeout(playTimeout);
+            audioPlayer.currentTime = 0;
+            audioPlayer.play();
+        });
+
+        function markTime() {
+            if (!isRecording) return;
+            
+            const currentTime = audioPlayer.currentTime;
+            devData[currentRecordIndex].start = lastMarkTime;
+            devData[currentRecordIndex].end = currentTime;
+            lastMarkTime = currentTime;
+            
+            currentRecordIndex++;
+            
+            if (currentRecordIndex < devData.length) {
+                devStatus.textContent = `錄製中: 第 ${currentRecordIndex + 1} 個詞 (${devData[currentRecordIndex].word})`;
+                currentIndex = currentRecordIndex;
+                updateCard();
+            } else {
+                audioPlayer.pause();
+                isRecording = false;
+                devMarkBtn.disabled = true;
+                devStatus.textContent = "錄製完成！";
+                devOutput.value = "let sentenceData = " + JSON.stringify(devData, null, 4) + ";";
+            }
+        }
+
+        devMarkBtn.addEventListener('click', markTime);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && isRecording) {
+                e.preventDefault();
+                markTime();
+            }
+        });
+    </script>
+</body>
+</html>
